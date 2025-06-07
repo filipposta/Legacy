@@ -1,0 +1,27 @@
+.App {
+  padding: 2rem;
+  font-family: sans-serif;
+  text-align: center;
+}
+
+.btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.posts {
+  margin-top: 2rem;
+}
+
+.post {
+  background: #f3f4f6;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+}

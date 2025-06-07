@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Basic user rules
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Posts rules
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (
+        request.auth.uid == resource.data.authorId || 
+        request.auth.uid == resource.data.userId ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderator', 'founder']
+      );
+    }
+    
+    // Friend requests rules
+    match /friendRequests/{requestId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.from || 
+        request.auth.uid == resource.data.to
+      );
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.from;
+      allow delete: if request.auth != null && (
+        request.auth.uid == resource.data.from || 
+        request.auth.uid == resource.data.to
+      );
+    }
+    
+    // Profile views rules - FIXED
+    match /profileViews/{viewId} {
+      // Users can only read profile views where they are the viewed user
+      allow read: if request.auth != null && request.auth.uid == resource.data.viewedUserId;
+      
+      // Allow admins to read all profile views
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderator', 'founder'];
+      
+      // Anyone authenticated can create a profile view
+      allow create: if request.auth != null;
+    }
+    
+    // Special rule for users collection for username checks
+    match /users/{userId} {
+      // Allow querying users collection for username availability without auth
+      allow list: if request.query.limit <= 1 &&
+                     request.query.fieldFilters.size() == 1 &&
+                     request.query.fieldFilters[0].field == 'username';
+      
+      // Normal authenticated access for other operations
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Default rule for all other collections
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
